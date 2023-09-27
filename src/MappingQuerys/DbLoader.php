@@ -1,7 +1,6 @@
 <?php
     namespace matrixOrm;
     use ReflectionClass;
-    use ReflectionProperty;
 
 
     class DbLoader {
@@ -9,36 +8,37 @@
         private static $rootDirectory = __DIR__;
         private static $classesWithAnnotation = [];
         private static $classFiles = [];
+        private static $initCalled = false;
 
-        private static function spl_autoload_register() {
-            foreach(self::$classFiles as $i){
-                include_once $i;
-            }
-        }
 
         public static function init(){
-            self::load();
-            self::spl_autoload_register();
-
-            foreach(self::$classesWithAnnotation as $classinst){
-                if($classinst !== "DbLoader" && $classinst !== "DbManager"){
-                    try {
-                        $reflection = new ReflectionClass($classinst);
-                        $reflectionMethods = $reflection->newInstance();
-                        $reflectionMethods->Create();
-                        $reflectionMethods = null;
-                        $reflection = null;
-                    } catch (\Throwable $th) {
-                        echo $th->getMessage();
+            if (!self::$initCalled) {
+                self::load();
+                foreach(self::$classesWithAnnotation as $classinst){
+                    if($classinst !== "DbLoader" && $classinst !== "DbManager"){
+                        try {
+                            $reflection = new ReflectionClass($classinst);
+                            $reflectionMethods = $reflection->newInstance();
+                            $reflectionMethods->Create() . "<br>";
+                            unset($reflectionMethods);
+                            unset($reflection);
+                        } catch (\Throwable $th) {
+                            echo $th->getMessage();
+                        }
                     }
                 }
+                self::$initCalled = true;
             }
         }
 
         public static function load(){
-            self::scanDirectory(dirname(self::$rootDirectory), self::$classesWithAnnotation);
+            if(count(self::$classesWithAnnotation) <= 0){
+                self::scanDirectory(dirname(self::$rootDirectory), self::$classesWithAnnotation);
+            }
             return self::$classesWithAnnotation;
         }
+
+
 
         private static function findClassesWithAnnotation($file, &$classesWithAnnotation, $dir) {
             $fileContent = file_get_contents($file);
@@ -63,5 +63,6 @@
             }
         }
 
-
     }
+
+?>

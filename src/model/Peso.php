@@ -1,6 +1,7 @@
 <?php
 
     use matrixOrm\DbManager;
+    include "./src/MappingQuerys/DbManager.php";
 
     /**
      * @teble
@@ -16,9 +17,9 @@
          */
         private $idade;
         /**
-         * @var varchar
+         * @OneToOne
          */
-        private $sexo;
+        private $pessoa;
     }
 
 
