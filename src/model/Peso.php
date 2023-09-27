@@ -7,7 +7,12 @@
      * @teble
      */
     class Pessoa2 extends DbManager
+
     {
+        /**
+         * @var identity
+         */
+        private $id;
         /**
          * @var varchar
          */
@@ -17,7 +22,7 @@
          */
         private $idade;
         /**
-         * @OneToOne
+         * @OneToMany
          */
         private $pessoa;
     }

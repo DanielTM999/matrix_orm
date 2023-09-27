@@ -10,16 +10,24 @@
         private static $classFiles = [];
         private static $initCalled = false;
 
+        public static function autoloader(){
+            self::load();
+            foreach(self::$classFiles as $incleders){
+                if(strpos($incleders,"DbLoader.php") === false && strpos($incleders,"DbManager.php") === false){
+                    include $incleders;
+                }
+            }
+        }
 
         public static function init(){
             if (!self::$initCalled) {
                 self::load();
                 foreach(self::$classesWithAnnotation as $classinst){
-                    if($classinst !== "DbLoader" && $classinst !== "DbManager"){
+                    if($classinst !== "DbLoader" && $classinst !== "DbManager" && $classinst !== "Con"){
                         try {
                             $reflection = new ReflectionClass($classinst);
                             $reflectionMethods = $reflection->newInstance();
-                            $reflectionMethods->Create() . "<br>";
+                            $reflectionMethods->Create();
                             unset($reflectionMethods);
                             unset($reflection);
                         } catch (\Throwable $th) {

@@ -2,12 +2,15 @@
 
     use matrixOrm\DbLoader;
     include "./src/MappingQuerys/DbLoader.php";
-    include "../OrmPhp/src/model/Pessoa.php";
-    include "../OrmPhp/src/model/Peso.php";
 
 
+    DbLoader::autoloader();
     DbLoader::init();
     $tes = new Pessoa();
+    $tes->setId(1);
+    $tes->save($tes);
+
+
 
 
 
