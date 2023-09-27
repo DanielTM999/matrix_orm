@@ -3,8 +3,7 @@
     use matrixOrm\DbLoader;
     include "./src/MappingQuerys/DbLoader.php";
 
-    $main = new DbLoader();
-    $main->init();
+    DbLoader::init();
     $tes = new Pessoa();
     print_r($tes::getClassContext());
 

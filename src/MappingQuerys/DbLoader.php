@@ -16,7 +16,7 @@
             }
         }
 
-        public function init(){
+        public static function init(){
             self::load();
             self::spl_autoload_register();
 
