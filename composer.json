@@ -1,0 +1,19 @@
+{
+    "name": "danieltm/orm-php",
+    "description": "ORM db",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Danieltm\\OrmPhp\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "danielTM999",
+            "email": "danielmelo101203@gmail.com"
+        }
+    ],
+    "minimum-stability": "alpha",
+    "require": {}
+}
