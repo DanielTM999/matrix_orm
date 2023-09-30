@@ -1,5 +1,7 @@
 <?php
     namespace matrixOrm;
+
+    use Exception;
     use ReflectionClass;
     use ReflectionProperty;
     use PDO;
@@ -23,12 +25,24 @@
                 $reflection = new ReflectionClass($this);
                 $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
                 $table = strtolower($reflection->getName());
-                $sql = "SELECT * FROM $table WHERE ";
+                $sql = "SELECT * FROM $table ";
                 $var = $this->reflectasloopvar($reflectionVars);
+                $props = $this->conteinsClassPropatyOne($reflectionVars);
+                if(count($props) > 0){
+                    foreach($props as $classtojion){
+                        $reflectionInternal = new ReflectionClass($classtojion);
+                        $reflectionVarsinternal = $reflectionInternal->getProperties(ReflectionProperty::IS_PRIVATE);
+                        $varId = $this->reflectasloopvar($reflectionVarsinternal);
+                        $sql .= "JOIN $classtojion ON $table.$classtojion = $classtojion.$varId ";
+
+                        unset($reflectionInternal);
+                        unset($reflectionVarsinternal);
+                    }
+                }
                 $sql .= "$var = $id;";
                 unset($reflection);
                 unset($reflectionVars);
-                return $this->ExecuteSelect($sql);
+                return $sql;
             }
 
             public function __call($method, $args){
@@ -55,10 +69,8 @@
                     $reflectionMethod = $reflection->getMethod("get".ucfirst($var));
                     $id = $reflectionMethod->invoke($this);
                 }
-                $resultado = $this->findById($id);
-                if(count($resultado) === 0){
+                echo $resultado = $this->findById($id);
 
-                }
             }
 
             public function Create(){
@@ -131,8 +143,9 @@
 
                 unset($reflection);
                 unset($reflectionVars);
+
                 if($controll > 0){
-                    return $this->ExecuteCreate($sql);
+                   return $this->ExecuteCreate($sql);
                 }
             }
 
@@ -167,9 +180,31 @@
             private function reflectasloopvar(array  $vars){
                 foreach($vars as $atribute){
                     $var = $this->getIdentityVarname($atribute);
+                    if($var !== null){
+                        return $var;
+                    }
+
                 }
 
-                return $var;
+            }
+
+            private function conteinsClassPropatyOne(array  $vars){
+                $varToJoin = [];
+                if(count(self::$loadedClass) == 0 ){
+                    self::$loadedClass = array_unique(DbLoader::load());
+                }
+                foreach($vars as $atribute){
+                    foreach(self::$loadedClass as $classload){
+                        if(strtolower($atribute->getName()) === strtolower($classload)){
+                            $typeManyOrOne = $this->hasTableRelation($atribute) ."<br>";
+                            if(strpos($typeManyOrOne, "1x1") === 0){
+                                $varToJoin[] = $classload;
+                            }
+                        }
+                    }
+                }
+
+                return  $varToJoin;
             }
 
             private function ExecuteCreate($sql){
@@ -197,6 +232,11 @@
                 } catch (\Throwable $th) {
                     echo $th->getMessage();
                 }
+            }
+
+            private function insert(DbManager $entity){
+                $reflection = new ReflectionClass($entity);
+                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
             }
 
         }

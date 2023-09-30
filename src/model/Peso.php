@@ -10,9 +10,9 @@
 
     {
         /**
-         * @var identity
-         */
-        private $id;
+          * @var identity
+          */
+        private $id_p2;
         /**
          * @var varchar
          */
@@ -22,9 +22,16 @@
          */
         private $idade;
         /**
-         * @OneToMany
+         * @OneToOne
          */
         private $pessoa;
+
+        public function getId_p2(){
+            return $this->id_p2;
+        }
+        public function setId($id){
+            $this->id_p2 = $id;
+        }
     }
 
 

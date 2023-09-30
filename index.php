@@ -6,7 +6,8 @@
 
     DbLoader::autoloader();
     DbLoader::init();
-    $tes = new Pessoa();
+
+    $tes = new Pessoa2();
     $tes->setId(1);
     $tes->save($tes);
 
