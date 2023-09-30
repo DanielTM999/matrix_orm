@@ -8,8 +8,6 @@
     DbLoader::init();
 
     $tes = new Pessoa2();
-    $tes->setId(1);
-    $tes->save($tes);
 
 
 

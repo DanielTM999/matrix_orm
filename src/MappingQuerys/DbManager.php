@@ -10,39 +10,50 @@
     if (!class_exists('matrixOrm\DbManager')){
         class DbManager {
             private static $loadedClass = [];
+            private $format = false;
 
 
             public static function getClassContext(){
                 return self::$loadedClass;
             }
 
-            public function findAll(){
-                $table = get_called_class();
-                return "SELECT * FROM $table";
+            public function setFormat(bool $format){
+                $this->format = $format;
             }
 
-            public function findById($id){
+            public function findAll(){
+                $reflection = new ReflectionClass($this);
+                $table = strtolower($reflection->getName());
+                $sql = "SELECT * FROM $table";
+                $response = $this->ExecuteSelect($sql);
+                if($this->format){
+                    return $this->formatResponse($reflection, $response);
+                }else{
+                    return $response;
+                }
+            }
+
+            public function findById($id, $withJoin = true){
                 $reflection = new ReflectionClass($this);
                 $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
                 $table = strtolower($reflection->getName());
-                $sql = "SELECT * FROM $table ";
                 $var = $this->reflectasloopvar($reflectionVars);
-                $props = $this->conteinsClassPropatyOne($reflectionVars);
-                if(count($props) > 0){
-                    foreach($props as $classtojion){
-                        $reflectionInternal = new ReflectionClass($classtojion);
-                        $reflectionVarsinternal = $reflectionInternal->getProperties(ReflectionProperty::IS_PRIVATE);
-                        $varId = $this->reflectasloopvar($reflectionVarsinternal);
-                        $sql .= "JOIN $classtojion ON $table.$classtojion = $classtojion.$varId ";
-
-                        unset($reflectionInternal);
-                        unset($reflectionVarsinternal);
+                $sql = $this->genericSelect($table, $reflectionVars, $var, $id, $withJoin);
+                $response = $this->ExecuteSelect($sql[0]["Mainquery"]);
+                for ($i=0; $i < count($sql); $i++) {
+                    $intern = $this->ExecuteSelect($sql[$i]["query"]);
+                    $expected = strtolower($sql[0]["var"]);
+                    for ($j=0; $j < count($response); $j++){
+                        $response[$j][$expected] =  $intern;
                     }
                 }
-                $sql .= "$var = $id;";
-                unset($reflection);
-                unset($reflectionVars);
-                return $sql;
+                if($this->format){
+                    return $this->formatResponse($reflection, $response);
+                }else{
+                    return $response;
+                }
+
+
             }
 
             public function __call($method, $args){
@@ -50,15 +61,39 @@
                 $reflectionVars = $reflection->getProperties();
                 $table = get_called_class();
 
+
                 foreach($reflectionVars as $var){
                     $exopected = 'findBy' . ucfirst($var->getName());
                     $expectedLow ='findBy' . $var->getName();
                     if (strpos($method, $exopected) === 0 || strpos($method, $expectedLow) === 0) {
                         $field = lcfirst(substr($method, 6));
                         $value = $args[0];
-                        return "SELECT * FROM $table WHERE $field = '$value'";
+                        if(isset($args[1])){
+                            if(is_bool($args[1])){
+                                $sql = $this->genericSelect($table, $reflectionVars, $field, $value, $args[1]);
+                            }else{
+                                $sql = $this->genericSelect($table, $reflectionVars, $field, $value);
+                            }
+                        }else{
+                            $sql = $this->genericSelect($table, $reflectionVars, $field, $value);
+                        }
+                        $response = $this->ExecuteSelect($sql[0]["Mainquery"]);
+                        for ($i=0; $i < count($sql); $i++) {
+                            $intern = $this->ExecuteSelect($sql[$i]["query"]);
+                            $expected = strtolower($sql[0]["var"]);
+                            for ($j=0; $j < count($response); $j++){
+                                $response[$j][$expected] =  $intern;
+                            }
+                        }
+                        if($this->format){
+                            return $this->formatResponse($reflection, $response);
+                        }else{
+                            return $response;
+                        }
                     }
                 }
+
+
             }
 
             public function save(DbManager $entity){
@@ -69,7 +104,7 @@
                     $reflectionMethod = $reflection->getMethod("get".ucfirst($var));
                     $id = $reflectionMethod->invoke($this);
                 }
-                echo $resultado = $this->findById($id);
+                $resultado = $this->findById($id);
 
             }
 
@@ -227,7 +262,6 @@
 
                 try {
                     $results = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-
                     return $results;
                 } catch (\Throwable $th) {
                     echo $th->getMessage();
@@ -237,6 +271,89 @@
             private function insert(DbManager $entity){
                 $reflection = new ReflectionClass($entity);
                 $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+            }
+
+            private function formatResponse(ReflectionClass $reflection, $response){
+                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+                $methods = $reflection->getMethods();
+                if(count($response) === 1){
+                    foreach($methods as $method){
+                        foreach($reflectionVars as $var){
+                            if(strtolower($method->getName()) === strtolower("set".$var->getName())){
+                                $method->invoke($this, $response[0][$var->getName()]);
+                            }
+                        }
+                    }
+                    unset($reflection);
+                    unset($reflectionVars);
+                }elseif(count($response) > 1){
+                    $arrayObject = [];
+                    foreach($response as $dbres){
+                        $newInstance = new $this;
+                        $reflectionnovo = new ReflectionClass($newInstance);
+                        $methods = $reflectionnovo->getMethods();
+                        foreach($methods as $method){
+                            foreach($reflectionVars as $var){
+                                if(strtolower($method->getName()) === strtolower("set".$var->getName())){
+                                    $method->invoke($newInstance, $dbres[$var->getName()]);
+                                }
+                            }
+                        }
+                        $arrayObject[] = $newInstance;
+                    }
+
+                    if(count($arrayObject) > 0 && $arrayObject !== null){
+                        $error = true;
+                        foreach($arrayObject as $res){
+                            $verificlass = new ReflectionClass($res);
+                            $reflectionVars = $verificlass->getProperties(ReflectionProperty::IS_PRIVATE);
+                            foreach($reflectionVars as $var){
+                                $var->setAccessible(true);
+                                $propertyValue = $var->getValue($this);
+
+                            }
+                        }
+                        unset($verificlass);
+                    }else{
+                        $error = true;
+                    }
+
+                    unset($reflection);
+                    unset($reflectionVars);
+                    if($error){
+                        return $response;
+                    }else{
+                        return $arrayObject;
+                    }
+                }
+
+            }
+
+            private function genericSelect($table, $reflectionVars, $var, $id, $withJoin = true){
+                $query = [];
+                $sql = "SELECT * FROM $table ";
+                $props = $this->conteinsClassPropatyOne($reflectionVars);
+                if(count($props) > 0 && $withJoin){
+                    foreach($props as $classtojion){
+                        $reflectionInternal = new ReflectionClass($classtojion);
+                        $reflectionVarsinternal = $reflectionInternal->getProperties(ReflectionProperty::IS_PRIVATE);
+                        $varId = $this->reflectasloopvar($reflectionVarsinternal);
+                        $sql .= " JOIN $classtojion ON $table.$classtojion = $classtojion.$varId ";
+                        $sql .= "WHERE $table.$var = '$id';";
+                        unset($reflectionInternal);
+                        unset($reflectionVarsinternal);
+                        $query[] = [
+                            "Mainquery" => "SELECT * FROM $table WHERE $table.$var = '$id'",
+                            "query" => $sql,
+                            "var" => $classtojion
+                        ];
+                    }
+                }else{
+                    $query[] = [
+                        "query" => $sql."WHERE $table.$var = '$id'",
+                    ];
+                }
+                return $query;
             }
 
         }

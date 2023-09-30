@@ -29,9 +29,10 @@
         public function getId_p2(){
             return $this->id_p2;
         }
-        public function setId($id){
+        public function setId_p2($id){
             $this->id_p2 = $id;
         }
+
     }
 
 
