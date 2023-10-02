@@ -21,15 +21,28 @@
                 $this->format = $format;
             }
 
-            public function findAll(){
+            public function findAll($withJoin = true){
                 $reflection = new ReflectionClass($this);
+                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+                $props = $this->conteinsClassPropatyOne($reflectionVars);
                 $table = strtolower($reflection->getName());
-                $sql = "SELECT * FROM $table";
-                $response = $this->ExecuteSelect($sql);
+                $sql = "SELECT * FROM $table ";
+                $responseBase = $this->ExecuteSelect("SELECT * FROM $table;");
+                foreach($props as $classtoload){
+                    $reflectionInternal = new ReflectionClass($classtoload);
+                    $reflectionVarsinternal = $reflectionInternal->getProperties(ReflectionProperty::IS_PRIVATE);
+                    $varId = $this->reflectasloopvar($reflectionVarsinternal);
+                    $class = strtolower($classtoload);
+                    $sql .= " JOIN $classtoload ON $table.$class = $class.$varId;";
+                    $response = $this->ExecuteSelect($sql);
+                    for ($i=0; $i < count($responseBase); $i++) {
+                        $responseBase[$i][$class] = $response;
+                    }
+                }
                 if($this->format){
                     return $this->formatResponse($reflection, $response);
                 }else{
-                    return $response;
+                    return $responseBase;
                 }
             }
 
@@ -39,12 +52,15 @@
                 $table = strtolower($reflection->getName());
                 $var = $this->reflectasloopvar($reflectionVars);
                 $sql = $this->genericSelect($table, $reflectionVars, $var, $id, $withJoin);
+
                 $response = $this->ExecuteSelect($sql[0]["Mainquery"]);
-                for ($i=0; $i < count($sql); $i++) {
-                    $intern = $this->ExecuteSelect($sql[$i]["query"]);
-                    $expected = strtolower($sql[0]["var"]);
-                    for ($j=0; $j < count($response); $j++){
-                        $response[$j][$expected] =  $intern;
+                if(isset($sql[0]["query"])){
+                    for ($i=0; $i < count($sql); $i++) {
+                        $intern = $this->ExecuteSelect($sql[$i]["query"]);
+                        $expected = strtolower($sql[0]["var"]);
+                        for ($j=0; $j < count($response); $j++){
+                            $response[$j][$expected] =  $intern;
+                        }
                     }
                 }
                 if($this->format){
@@ -65,9 +81,10 @@
                 foreach($reflectionVars as $var){
                     $exopected = 'findBy' . ucfirst($var->getName());
                     $expectedLow ='findBy' . $var->getName();
+                    $expectedDelete = 'deleteBy'. ucfirst($var->getName());
+                    $value = $args[0];
                     if (strpos($method, $exopected) === 0 || strpos($method, $expectedLow) === 0) {
                         $field = lcfirst(substr($method, 6));
-                        $value = $args[0];
                         if(isset($args[1])){
                             if(is_bool($args[1])){
                                 $sql = $this->genericSelect($table, $reflectionVars, $field, $value, $args[1]);
@@ -79,10 +96,12 @@
                         }
                         $response = $this->ExecuteSelect($sql[0]["Mainquery"]);
                         for ($i=0; $i < count($sql); $i++) {
-                            $intern = $this->ExecuteSelect($sql[$i]["query"]);
-                            $expected = strtolower($sql[0]["var"]);
-                            for ($j=0; $j < count($response); $j++){
-                                $response[$j][$expected] =  $intern;
+                            if(isset($sql[$i]["query"])){
+                                $intern = $this->ExecuteSelect($sql[$i]["query"]);
+                                $expected = strtolower($sql[0]["var"]);
+                                for ($j=0; $j < count($response); $j++){
+                                    $response[$j][$expected] =  $intern;
+                                }
                             }
                         }
                         if($this->format){
@@ -90,21 +109,59 @@
                         }else{
                             return $response;
                         }
+                    }elseif(strtolower($method) === strtolower($expectedDelete)){
+                        $field = lcfirst(substr($method, 8));
+                        $sql = "DELETE FROM $table WHERE $field = '$value';";
+                        $response = $this->ExecuteDelete($sql);
+                        if($response === 1){
+                            return true;
+                        }else{
+                            return false;
+                        }
                     }
+
                 }
+
 
 
             }
 
             public function save(DbManager $entity){
-                $reflection = new ReflectionClass($this);
+                $reflection = new ReflectionClass($entity);
                 $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
-                $var = $this->reflectasloopvar($reflectionVars);
-                if($reflection->hasMethod("get".ucfirst($var))){
-                    $reflectionMethod = $reflection->getMethod("get".ucfirst($var));
-                    $id = $reflectionMethod->invoke($this);
+                $identity = $this->reflectasloopvar($reflectionVars);
+                $table = strtolower($reflection->getName());
+                $sql = "INSERT INTO $table(";
+                $state = "(";
+                $data = [];
+                foreach($reflectionVars as $var){
+                    if($var->getName() !== $identity){
+                        $lasid = $this->conteinsExternalClass($var, $entity);
+                        $atribute = $var->getName();
+                        $sql .= "$atribute,";
+                        $var->setAccessible(true);
+                        if(isset($lasid[0]) && isset($lasid[1])){
+                            if($lasid[0]){
+                                $data[] = $lasid[1];
+                            }else{
+                                $data[] = $var->getValue($entity);
+                            }
+                        }else{
+                            $data[] = $var->getValue($entity);
+                        }
+                        $var->setAccessible(false);
+                    }
                 }
-                $resultado = $this->findById($id);
+
+                foreach($data as $element){
+                    $state .= "'$element', ";
+                }
+
+                $sql = rtrim($sql, ', ') . ") VALUES ";
+                $state = rtrim($state, ', ') . ");";
+                $sql = $sql . $state;
+                $response = $this->ExecuteInsert($sql);
+                return $response;
 
             }
 
@@ -257,6 +314,15 @@
                 }
             }
 
+            private function ExecuteDelete($sql){
+                $pdo = Connection::Conect();
+                try {
+                   return $pdo->exec($sql);
+                } catch (\Throwable $th) {
+                    throw new Exception($th->getMessage());
+                }
+            }
+
             private function ExecuteSelect($sql){
                 $pdo = Connection::Conect();
 
@@ -268,9 +334,21 @@
                 }
             }
 
-            private function insert(DbManager $entity){
-                $reflection = new ReflectionClass($entity);
-                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+            private function ExecuteInsert($sql){
+                $pdo = Connection::Conect();
+                $response = [];
+                try {
+                    $status = $pdo->exec($sql);
+                    if($status === 1 ){
+                        $response[] = true;
+                    }else{
+                        $response[] = false;
+                    }
+                    $response[] = $pdo->lastInsertId();
+                    return $response;
+                } catch (\Throwable $th) {
+                    return $th->getMessage();
+                }
             }
 
             private function formatResponse(ReflectionClass $reflection, $response){
@@ -350,10 +428,48 @@
                     }
                 }else{
                     $query[] = [
-                        "query" => $sql."WHERE $table.$var = '$id'",
+                        "Mainquery" => $sql."WHERE $table.$var = '$id'"
                     ];
                 }
                 return $query;
+            }
+
+            private function conteinsExternalClass(ReflectionProperty $property, DbManager $entity){
+                foreach(self::$loadedClass as $class){
+                    if($property->getName() === strtolower($class)){
+                        $property->setAccessible(true);
+                        $subentity = $property->getValue($entity);
+                        $reflection = new ReflectionClass($subentity);
+                        $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+                        $identity = $this->reflectasloopvar($reflectionVars);
+                        $table = strtolower($reflection->getName());
+                        $sql = "INSERT INTO $table (";
+                        $state = "(";
+                        $data = [];
+                        foreach($reflectionVars as $var){
+                            if($var->getName() !== $identity){
+                                $this->conteinsExternalClass($var, $subentity);
+                                $atribute = $var->getName();
+                                $sql .= "$atribute, ";
+                                $var->setAccessible(true);
+                                $data[] = $var->getValue($subentity);
+                                $var->setAccessible(false);
+                            }
+                        }
+
+                        foreach($data as $element){
+                            $state .= "'$element', ";
+                        }
+
+                        $sql = rtrim($sql, ', ') . ") VALUES ";
+                        $state = rtrim($state, ', ') . ");";
+                        $sql = $sql . $state;
+                        unset($reflection);
+                        unset($reflectionVars);
+                        $response = $this->ExecuteInsert($sql, $data);
+                        return $response;
+                    }
+                }
             }
 
         }

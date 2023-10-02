@@ -26,6 +26,13 @@
          */
         private $pessoa;
 
+        function __construct($nome = "", $idade = "", $pessoa = null)
+        {
+            $this->nome = $nome;
+            $this->idade = $idade;
+            $this->pessoa = $pessoa;
+        }
+
         public function getId_p2(){
             return $this->id_p2;
         }
