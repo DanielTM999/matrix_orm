@@ -63,9 +63,12 @@
                         }
                     }
                 }
+
                 if($this->format){
                     return $this->formatResponse($reflection, $response);
                 }else{
+                    unset($reflectionVars);
+                    unset($reflection);
                     return $response;
                 }
 
@@ -109,6 +112,8 @@
                         if($this->format){
                             return $this->formatResponse($reflection, $response);
                         }else{
+                            unset($reflectionVars);
+                            unset($reflection);
                             return $response;
                         }
                     }elseif(strtolower($method) === strtolower($expectedDelete)){
@@ -117,20 +122,28 @@
                         $sql = "DELETE FROM $table WHERE $field = '$value';";
                         $response = $this->ExecuteDelete($sql);
                         if($response === 1){
+                            unset($reflectionVars);
+                            unset($reflection);
                             return true;
                         }else{
+                            unset($reflectionVars);
+                            unset($reflection);
                             return false;
                         }
                     }elseif(strtolower($method) === strtolower($expectedGet)){
                         $var->setAccessible(true);
                         $results = $var->getValue($this);
                         $var->setAccessible(false);
+                        unset($reflectionVars);
+                        unset($reflection);
                         return $results;
                     }elseif(strtolower($method) === strtolower($expectedSet)){
                         $value = $args[0];
                         $var->setAccessible(true);
                         $results = $var->setValue($this, $value);
                         $var->setAccessible(false);
+                        unset($reflectionVars);
+                        unset($reflection);
                     }
 
                 }
@@ -174,6 +187,8 @@
                 $state = rtrim($state, ', ') . ");";
                 $sql = $sql . $state;
                 $response = $this->ExecuteInsert($sql);
+                unset($reflectionVars);
+                unset($reflection);
                 return $response;
 
             }
