@@ -1,5 +1,5 @@
 <?php
-    namespace matrix_orm;
+    namespace danieltm\matrix_orm;
     use PDO;
     use Exception;
 

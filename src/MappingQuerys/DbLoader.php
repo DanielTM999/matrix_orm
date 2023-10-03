@@ -1,5 +1,5 @@
 <?php
-    namespace matrix_orm;
+    namespace danieltm\matrix_orm;
     use ReflectionClass;
 
 
@@ -40,6 +40,7 @@
         }
 
         public static function load(){
+            self::$rootDirectory = Connection::ShowDirEnv();
             if(count(self::$classesWithAnnotation) <= 0){
                 self::scanDirectory(dirname(self::$rootDirectory), self::$classesWithAnnotation);
             }
