@@ -70,6 +70,7 @@ class SuaClasseModel extends DbManager
 }
 
 ```
+
 ## 1.1 configuraçoes de tipagem
     @var varchar
     @var json
