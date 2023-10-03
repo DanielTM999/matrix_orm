@@ -46,8 +46,6 @@
             return self::$classesWithAnnotation;
         }
 
-
-
         private static function findClassesWithAnnotation($file, &$classesWithAnnotation, $dir) {
             $fileContent = file_get_contents($file);
             if (strpos($fileContent, '@teble') !== false) {
