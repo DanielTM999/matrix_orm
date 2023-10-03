@@ -39,7 +39,7 @@
         public static function ShowDirEnv(){
             $limit = 10;
             $baseDir = __DIR__;
-            while (!file_exists($baseDir . '/.env') && !file_exists($baseDir . '\index.php')) {
+            while (!file_exists($baseDir . '/.env') && !file_exists($baseDir . '\initAplication.php')) {
                 $baseDir = dirname($baseDir);
                 if($limit === 0){
                     break;
