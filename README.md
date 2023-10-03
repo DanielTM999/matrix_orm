@@ -149,3 +149,14 @@ $resultados = $seuModel->deleteById(0);
 $seuModel = new SuaClasseModel();
 $resultados = $seuModel->deleteByNome("nome");
 ```
+
+#### Adicionar registros
+
+```php
+$seuModel = new SuaClasseModel();
+$outroModelo = new OutroModelo();
+$seuModel->setNome("nome");
+$seuModel->setIdade(20);
+$seuModel->setOutroModelo($outroModelo);
+$resultados = $seuModel->save($seuModel);
+```
