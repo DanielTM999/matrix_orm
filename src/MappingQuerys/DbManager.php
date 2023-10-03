@@ -191,7 +191,7 @@
                 foreach ($reflectionVars as $property) {
                     $propertyName = $property->getName();
                     $propertyType = $this->getPropertyType($property);
-
+                    $unique = $this->hasUnique($property);
                     if ($propertyType === 'identity') {
                         $sql .= "$propertyName INT AUTO_INCREMENT PRIMARY KEY";
                     } else {
@@ -255,6 +255,11 @@
             private function hasNotNullAnnotation(ReflectionProperty $property){
                 $docComment = $property->getDocComment();
                 return strpos($docComment, '@notnull') !== false;
+            }
+
+            private function hasUnique(ReflectionProperty $property){
+                $docComment = $property->getDocComment();
+                return strpos($docComment, '@unique') !== false;
             }
 
             private function hasTableRelation(ReflectionProperty $property){
@@ -475,7 +480,7 @@
                 }
             }
 
-            private function choiceTypeAtrubite($propertyType, $propertyName, &$nonconfig){
+            private function choiceTypeAtrubite($propertyType, $propertyName, &$nonconfig, bool $unique){
                 $sql = "";
                 if ($propertyType === 'int') {
                     $sql = "$propertyName INT ";
@@ -516,6 +521,10 @@
                 }elseif($propertyType === "blob"){
                     $sql = "$propertyName BLOB";
                     $nonconfig = false;
+                }
+
+                if($unique){
+                    $sql =  $sql . " UNIQUE";
                 }
 
                 if(!empty($sql)){
