@@ -19,7 +19,6 @@
         "start":"php -S localhost:80"
     },
     "require": {
-        "php": "^7.0"
     },
     "version": "1.0.0"
 }
