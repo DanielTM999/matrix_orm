@@ -6,7 +6,7 @@
     class Connection{
 
         public static function Conect(){
-            self::loadEnv(dirname(__DIR__) . '/.env');
+            self::loadEnv(self::ShowDirEnv() . '/.env');
             $host = $_ENV['HOST'];
 
             $user = $_ENV['USER'];
@@ -37,7 +37,11 @@
         }
 
         public static function ShowDirEnv(){
-            return dirname(__DIR__) . '/.env';
+            $baseDir = __DIR__;
+            while (!file_exists($baseDir . '/.env') || !file_exists($baseDir . '/.env')) {
+                $baseDir = dirname($baseDir);
+            }
+            return $baseDir;
         }
 
         private static function loadEnv ($filePath){
