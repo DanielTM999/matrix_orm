@@ -16,7 +16,10 @@
     ],
     "minimum-stability": "beta",
     "scripts": {
-        "start":"php -S localhost:80"
+        "start": [
+            "echo Iniciando Servidor php inbutido",
+            "php -S localhost:80"
+        ]
     },
     "require": {},
     "version": "1.0.0"
