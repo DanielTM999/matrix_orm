@@ -1,19 +1,26 @@
 {
-    "name": "danieltm/orm-php",
-    "description": "ORM db",
+    "name": "daniel/matrix-orm",
+    "description": "Orm para php",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Danieltm\\OrmPhp\\": "src/"
+            "Daniel\\MatrixOrm\\MappingQuerys\\": "src/MappingQuerys/"
         }
     },
     "authors": [
         {
-            "name": "danielTM999",
+            "name": "Daniel Teixeira Melo",
             "email": "danielmelo101203@gmail.com"
         }
     ],
-    "minimum-stability": "alpha",
-    "require": {}
+    "minimum-stability": "beta",
+    "scripts": {
+        "start":"php -S localhost:80"
+    },
+    "require": {
+        "php": "^7.0",
+        "daniel/matrix-orm": "^1.0.0"
+    },
+    "version": "1.0.0"
 }

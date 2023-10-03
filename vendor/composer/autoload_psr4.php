@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Danieltm\\OrmPhp\\' => array($baseDir . '/src'),
+    'Daniel\\MatrixOrm\\' => array($baseDir . '/src'),
 );
