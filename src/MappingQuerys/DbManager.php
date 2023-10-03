@@ -196,7 +196,7 @@
                         $sql .= "$propertyName INT AUTO_INCREMENT PRIMARY KEY";
                     } else {
                         $nonconfig = true;
-                        $sql .= $this->choiceTypeAtrubite($propertyType, $propertyName, $nonconfig);
+                        $sql .= $this->choiceTypeAtrubite($propertyType, $propertyName, $nonconfig, $unique);
                         foreach(self::$loadedClass as $classGetatribute){
                             if($classGetatribute !== "DbManager" && $classGetatribute !== "DbLoader"){
                                 if(strtolower($propertyName) === strtolower($classGetatribute)){

@@ -8,7 +8,19 @@ Certifique-se de que você tenha as seguintes dependências instaladas e configu
 
 1. **PHP**: Certifique-se de ter o PHP instalado em seu ambiente de desenvolvimento. Este ORM foi desenvolvido em PHP.
 
-2. **Banco de Dados**: Este ORM assume que você já configurou sua conexão com o banco de dados. Certifique-se de ter as informações de conexão corretas definidas em algum lugar de sua aplicação.
+2. **Banco de Dados**: Este ORM usa .env como ambiente para pegar os dados de coneção por tanto deve-se criar um .env na
+raiz do projeto onde foi definido geralmente /src
+
+```.env
+
+    HOST = localhost
+    USER = root
+    PASSWORD =
+    DATABASE = seuBanco
+    POST = 3306 #opicional caso esteza rodando em outra porta
+    DIALECT = mysql #opicional caso esteza rodando em outro banco de dados
+
+```
 
 ## Uso Básico
 
@@ -30,7 +42,7 @@ class SuaClasseModel extends DbManager
         /**
          * @var varchar
          * @notnull
-         *
+         * @unique
          */
         private $nome;
         /**
@@ -62,7 +74,8 @@ class SuaClasseModel extends DbManager
     @var enum
     @var bit
     @var time
-    @notnull -> coluna não null
+    @notnull
+    @unique
 ## 1.2 configuraçoes de mapeamento
     Mapeia todas as classes que possuirem o em cima dela
     /**

@@ -11,7 +11,7 @@
     class Pessoa extends DbManager{
         /**
          * @var varchar
-         *
+         * @unique
          */
         private $nome;
         /**
