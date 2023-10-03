@@ -12,9 +12,11 @@ Certifique-se de que você tenha as seguintes dependências instaladas e configu
 raiz do projeto onde foi definido geralmente /src
 
 ```php
-    use matrixOrm\Connection;
+    namespace SeuNamespace;
+    include "vendor/autoload.php"
+    use matrix_orm\DbManager;
 
-    echo Connection::ShowDirEnv(); // retorna o diretorio para se criar o .env
+    echo Connection::ShowDirEnv(); // retorna o diretorio para se criar o .env com base on index ou procura o env onde vc criou
 ```
 
 ```.env
@@ -36,8 +38,8 @@ Para começar a usar este ORM, siga estas etapas:
 
 ```php
 namespace SeuNamespace;
-
-use matrixOrm\DbManager;
+include "vendor/autoload.php"
+use matrix_orm\DbManager;
 
     /**
      * @teble
