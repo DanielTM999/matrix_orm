@@ -82,8 +82,10 @@
                     $exopected = 'findBy' . ucfirst($var->getName());
                     $expectedLow ='findBy' . $var->getName();
                     $expectedDelete = 'deleteBy'. ucfirst($var->getName());
-                    $value = $args[0];
+                    $expectedGet = 'get'. ucfirst($var->getName());
+                    $expectedSet = 'set'. ucfirst($var->getName());
                     if (strpos($method, $exopected) === 0 || strpos($method, $expectedLow) === 0) {
+                        $value = $args[0];
                         $field = lcfirst(substr($method, 6));
                         if(isset($args[1])){
                             if(is_bool($args[1])){
@@ -110,6 +112,7 @@
                             return $response;
                         }
                     }elseif(strtolower($method) === strtolower($expectedDelete)){
+                        $value = $args[0];
                         $field = lcfirst(substr($method, 8));
                         $sql = "DELETE FROM $table WHERE $field = '$value';";
                         $response = $this->ExecuteDelete($sql);
@@ -118,6 +121,16 @@
                         }else{
                             return false;
                         }
+                    }elseif(strtolower($method) === strtolower($expectedGet)){
+                        $var->setAccessible(true);
+                        $results = $var->getValue($this);
+                        $var->setAccessible(false);
+                        return $results;
+                    }elseif(strtolower($method) === strtolower($expectedSet)){
+                        $value = $args[0];
+                        $var->setAccessible(true);
+                        $results = $var->setValue($this, $value);
+                        $var->setAccessible(false);
                     }
 
                 }
@@ -183,17 +196,7 @@
                         $sql .= "$propertyName INT AUTO_INCREMENT PRIMARY KEY";
                     } else {
                         $nonconfig = true;
-                        if ($propertyType === 'int') {
-                            $sql .= "$propertyName INT ";
-                            $nonconfig = false;
-                        } elseif ($propertyType === 'float') {
-                            $sql .= "$propertyName FLOAT";
-                            $nonconfig = false;
-                        } elseif ($propertyType === 'varchar') {
-                            $sql .= "$propertyName VARCHAR(255)";
-                            $nonconfig = false;
-                        }
-
+                        $sql .= $this->choiceTypeAtrubite($propertyType, $propertyName, $nonconfig);
                         foreach(self::$loadedClass as $classGetatribute){
                             if($classGetatribute !== "DbManager" && $classGetatribute !== "DbLoader"){
                                 if(strtolower($propertyName) === strtolower($classGetatribute)){
@@ -469,6 +472,54 @@
                         $response = $this->ExecuteInsert($sql, $data);
                         return $response;
                     }
+                }
+            }
+
+            private function choiceTypeAtrubite($propertyType, $propertyName, &$nonconfig){
+                $sql = "";
+                if ($propertyType === 'int') {
+                    $sql = "$propertyName INT ";
+                    $nonconfig = false;
+                } elseif ($propertyType === 'float') {
+                    $sql = "$propertyName FLOAT";
+                    $nonconfig = false;
+                } elseif ($propertyType === 'varchar') {
+                    $sql = "$propertyName VARCHAR(255)";
+                    $nonconfig = false;
+                }elseif($propertyType === "json"){
+                    $sql = "$propertyName JSON";
+                    $nonconfig = false;
+                }elseif($propertyType === "text"){
+                    $sql = "$propertyName TEXT";
+                    $nonconfig = false;
+                }elseif($propertyType === "enum"){
+                    $sql = "$propertyName ENUM";
+                    $nonconfig = false;
+                }elseif($propertyType === "bit"){
+                    $sql = "$propertyName BIT";
+                    $nonconfig = false;
+                }elseif($propertyType === "uuid"){
+                    $sql = "$propertyName UUID";
+                    $nonconfig = false;
+                }elseif($propertyType === "boolean"){
+                    $sql = "$propertyName BOOLEAN";
+                    $nonconfig = false;
+                }elseif($propertyType === "datetime"){
+                    $sql = "$propertyName DATETIME";
+                    $nonconfig = false;
+                }elseif($propertyType === "time"){
+                    $sql = "$propertyName TIME";
+                    $nonconfig = false;
+                }elseif($propertyType === "date"){
+                    $sql = "$propertyName DATE";
+                    $nonconfig = false;
+                }elseif($propertyType === "blob"){
+                    $sql = "$propertyName BLOB";
+                    $nonconfig = false;
+                }
+
+                if(!empty($sql)){
+                    return $sql;
                 }
             }
 
