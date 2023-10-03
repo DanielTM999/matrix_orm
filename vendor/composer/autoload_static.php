@@ -16,7 +16,7 @@ class ComposerStaticInit0a209a920303fb66695daa3296057f95
     public static $prefixDirsPsr4 = array (
         'danieltm\\matrix-orm\\' => 
         array (
-            0 => '/src/MappingQuerys',
+            0 => __DIR__ . '/../..' . '/src/MappingQuerys',
         ),
     );
 

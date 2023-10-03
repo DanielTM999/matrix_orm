@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'danieltm\\matrix-orm\\' => array('/src/MappingQuerys'),
+    'danieltm\\matrix-orm\\' => array($baseDir . '/src/MappingQuerys'),
 );
