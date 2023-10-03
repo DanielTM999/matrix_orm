@@ -7,16 +7,16 @@ namespace Composer\Autoload;
 class ComposerStaticInit0a209a920303fb66695daa3296057f95
 {
     public static $prefixLengthsPsr4 = array (
-        'D' => 
+        'd' => 
         array (
-            'Daniel\\MatrixOrm\\' => 17,
+            'danieltm\\matrix-orm\\' => 20,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Daniel\\MatrixOrm\\' => 
+        'danieltm\\matrix-orm\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/src',
+            0 => '/src/MappingQuerys',
         ),
     );
 
