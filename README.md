@@ -121,7 +121,7 @@ Agora que você estendeu a classe `DbManager` e inicializou o carregador de clas
 
 Aqui estão alguns exemplos de como usar este ORM:
 
-#### Recuperar todos os registros
+#### Recuperar os registros
 
 ```php
 $seuModel = new SuaClasseModel();
@@ -137,4 +137,15 @@ $resultados = $seuModel->findId(0);
 $seuModel = new SuaClasseModel();
 //caso tenha $nome na sua variavel
 $resultados = $seuModel->findByNome("nome");
+```
+#### Deletar os registros
+
+```php
+$seuModel = new SuaClasseModel();
+$resultados = $seuModel->deleteById(0);
+```
+
+```php
+$seuModel = new SuaClasseModel();
+$resultados = $seuModel->deleteByNome("nome");
 ```
