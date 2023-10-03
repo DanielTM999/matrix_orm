@@ -38,7 +38,6 @@ Para começar a usar este ORM, siga estas etapas:
 
 ```php
 namespace SeuNamespace;
-include "vendor/autoload.php"
 use matrix_orm\DbManager;
 
     /**
