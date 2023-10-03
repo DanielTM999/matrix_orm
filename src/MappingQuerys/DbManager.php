@@ -1,5 +1,5 @@
 <?php
-    namespace matrixOrm;
+    namespace danieltm\matrix_orm;
 
     use Exception;
     use ReflectionClass;

@@ -9,12 +9,12 @@ class ComposerStaticInit0a209a920303fb66695daa3296057f95
     public static $prefixLengthsPsr4 = array (
         'd' => 
         array (
-            'danieltm\\matrix-orm\\' => 20,
+            'danieltm\\matrix_orm\\' => 20,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'danieltm\\matrix-orm\\' => 
+        'danieltm\\matrix_orm\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src/MappingQuerys',
         ),

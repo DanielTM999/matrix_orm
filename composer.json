@@ -1,11 +1,11 @@
 {
-    "name": "danieltm/matrix-orm",
+    "name": "danieltm/matrix_orm",
     "description": "Orm para php",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "danieltm\\matrix-orm\\": "src/MappingQuerys/"
+            "danieltm\\matrix_orm\\": "src/MappingQuerys/"
         }
     },
     "authors": [
