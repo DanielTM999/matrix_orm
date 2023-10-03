@@ -1,5 +1,5 @@
 <?php
-    namespace danieltm\matrix_orm;
+    namespace matrix_orm;
     use PDO;
     use Exception;
 
@@ -39,7 +39,7 @@
         public static function ShowDirEnv(){
             $limit = 10;
             $baseDir = __DIR__;
-            while (!file_exists($baseDir . '/.env') || !file_exists($baseDir . '/.env')) {
+            while (!file_exists($baseDir . '/.env') && !file_exists($baseDir . '\index.php')) {
                 $baseDir = dirname($baseDir);
                 if($limit === 0){
                     break;
