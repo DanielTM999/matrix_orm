@@ -25,7 +25,7 @@ raiz do projeto onde foi definido geralmente /src
     USER = root
     PASSWORD =
     DATABASE = seuBanco
-    POST = 3306 #opicional caso esteza rodando em outra porta
+    PORT = 3306 #opicional caso esteza rodando em outra porta
     DIALECT = mysql #opicional caso esteza rodando em outro banco de dados
 
 ```

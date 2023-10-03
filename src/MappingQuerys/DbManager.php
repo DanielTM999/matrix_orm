@@ -51,7 +51,6 @@
                 $table = strtolower($reflection->getName());
                 $var = $this->reflectasloopvar($reflectionVars);
                 $sql = $this->genericSelect($table, $reflectionVars, $var, $id, $withJoin);
-
                 $response = $this->ExecuteSelect($sql[0]["Mainquery"]);
                 if(isset($sql[0]["query"])){
                     for ($i=0; $i < count($sql); $i++) {
@@ -63,8 +62,9 @@
                     }
                 }
 
+
                 if($this->format){
-                    return $this->formatResponse($reflection, $response);
+                    return $this->FormatResponseBeta($reflection, $response);
                 }else{
                     unset($reflectionVars);
                     unset($reflection);
@@ -161,7 +161,7 @@
                 $data = [];
                 foreach($reflectionVars as $var){
                     if($var->getName() !== $identity){
-                        $lasid = $this->conteinsExternalClass($var, $entity);
+                        $lasid = $this->conteinsExternalClassInsert($var, $entity);
                         $atribute = $var->getName();
                         $sql .= "$atribute,";
                         $var->setAccessible(true);
@@ -324,7 +324,7 @@
             private function ExecuteCreate($sql){
                 $pdo = Connection::Conect();
                 try {
-                    $pdo->exec($sql);
+                    return $pdo->exec($sql);
                 } catch (\Throwable $th) {
                     $error = '(errno: 150 "Foreign key constraint is incorrectly formed")';
                     if(strpos($th->getMessage(),$error) !== false){
@@ -371,6 +371,52 @@
                 } catch (\Throwable $th) {
                     return $th->getMessage();
                 }
+            }
+
+            private function FormatResponseBeta(ReflectionClass $reflection, $response){
+                if(count($response) > 0){
+                    try {
+                        $this->isSingle($response);
+                        $this->formatSingle($reflection, $response, $this);
+                    } catch (\Throwable $th) {
+                        //throw $th;
+                    }
+                }
+            }
+
+            private function formatSingle(ReflectionClass $reflection, $response, $Instance){
+                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+                foreach($reflectionVars as $var){
+                    $object = $this->subFormat($var, $response[0]);
+                    $varName = $var->getName();
+                    $var->setAccessible(true);
+                    if($object !== null){
+                        $var->setValue($Instance, $object);
+                    }else{
+                        $var->setValue($Instance, $response[0][$varName]);
+                    }
+                    $var->setAccessible(false);
+                }
+
+            }
+
+            private function subFormat(ReflectionProperty $reflection, $data){
+                foreach(self::$loadedClass as $class){
+                    if(strtolower($class) === strtolower($reflection->getName())){
+                        $newClass = new ReflectionClass($class);
+                        $instance = $newClass->newInstance();
+                        try {
+                            $this->isSingle($data[strtolower($class)]);
+                            $this->formatSingle($newClass, $data[strtolower($class)], $instance);
+                        } catch (\Throwable $th) {
+                            //throw $th;
+                        }
+
+                        return $instance;
+                    }
+                }
+
+                return null;
             }
 
             private function formatResponse(ReflectionClass $reflection, $response){
@@ -456,7 +502,7 @@
                 return $query;
             }
 
-            private function conteinsExternalClass(ReflectionProperty $property, DbManager $entity){
+            private function conteinsExternalClassInsert(ReflectionProperty $property, DbManager $entity){
                 foreach(self::$loadedClass as $class){
                     if($property->getName() === strtolower($class)){
                         $property->setAccessible(true);
@@ -544,6 +590,14 @@
                 if(!empty($sql)){
                     return $sql;
                 }
+            }
+
+            private function isSingle($response){
+                if(count($response) === 1){
+                    return;
+                }
+
+                throw new Exception("fomatação multipla");
             }
 
         }
