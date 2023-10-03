@@ -109,11 +109,11 @@ $resultados = $seuModel->findAll();
 
 ```php
 $seuModel = new SuaClasseModel();
-$resultados = $seuModel->findAll();
+$resultados = $seuModel->findId(0);
 ```
 
 ```php
 $seuModel = new SuaClasseModel();
 //caso tenha $nome na sua variavel
-$resultados = $seuModel->findByNome();
+$resultados = $seuModel->findByNome("nome");
 ```
