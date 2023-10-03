@@ -11,6 +11,12 @@ Certifique-se de que você tenha as seguintes dependências instaladas e configu
 2. **Banco de Dados**: Este ORM usa .env como ambiente para pegar os dados de coneção por tanto deve-se criar um .env na
 raiz do projeto onde foi definido geralmente /src
 
+```php
+    use matrixOrm\Connection;
+
+    echo Connection::ShowDirEnv(); // retorna o diretorio para se criar o .env
+```
+
 ```.env
 
     HOST = localhost

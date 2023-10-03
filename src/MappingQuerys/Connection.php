@@ -36,6 +36,10 @@
             }
         }
 
+        public static function ShowDirEnv(){
+            return dirname(__DIR__) . '/.env';
+        }
+
         private static function loadEnv ($filePath){
             if (!file_exists($filePath)) {
                 throw new Exception('O arquivo .env não foi encontrado.');
@@ -53,6 +57,7 @@
                 }
             }
         }
+
     }
 
 ?>
