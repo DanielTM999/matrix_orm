@@ -9,7 +9,8 @@
 
     $casa = new Casa();
     $casa->setFormat(true);
-    $casa->findById(3);
-    echo $casa->getPessoa()->getIdade();
+    $casa->findByPessoa("teste");
+
+
 
 ?>

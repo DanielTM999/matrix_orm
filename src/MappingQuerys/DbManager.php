@@ -20,6 +20,29 @@
                 $this->format = $format;
             }
 
+            public function QueryMaker($sql){
+                $reflection = new ReflectionClass($this);
+                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+                $identity = $this->reflectasloopvar($reflectionVars);
+                $privates_words = ["@table", "@id"];
+                $data = [strtolower(get_called_class()), "$identity"];
+                $tokens = explode(" ", $sql);
+                $type = "";
+                for($i = 0; $i < count($tokens); $i++){
+                    $type = $tokens[0];
+                    for($j = 0; $j < count($privates_words); $j++){
+                        if(strtolower($tokens[$i]) === $privates_words[$j]){
+                            $tokens[$i] = $data[$j];
+                        }
+                    }
+                }
+                unset($reflectionVars);
+                unset($reflection);
+                $sql = implode(" ", $tokens);
+                $sql .= ";";
+                return $this->autoselectSQL_Type($type, $sql);
+            }
+
             public function findAll($withJoin = true){
                 $reflection = new ReflectionClass($this);
                 $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
@@ -34,12 +57,19 @@
                     $class = strtolower($classtoload);
                     $sql .= " JOIN $classtoload ON $table.$class = $class.$varId;";
                     $response = $this->ExecuteSelect($sql);
+                    $entity = [];
                     for ($i=0; $i < count($responseBase); $i++) {
-                        $responseBase[$i][$class] = $response;
+                        foreach($response as $data){
+                            if($responseBase[$i][$class] === $data[$class]){
+                                $entity = $data;
+                            }
+                        }
+                        $responseBase[$i][$class] = $entity;
                     }
                 }
+
                 if($this->format){
-                    return $this->formatResponse($reflection, $response);
+                    return $this->FormatResponseBeta($reflection, $responseBase);
                 }else{
                     return $responseBase;
                 }
@@ -109,7 +139,7 @@
                             }
                         }
                         if($this->format){
-                            return $this->formatResponse($reflection, $response);
+                            return $this->FormatResponseBeta($reflection, $response);
                         }else{
                             unset($reflectionVars);
                             unset($reflection);
@@ -374,12 +404,14 @@
             }
 
             private function FormatResponseBeta(ReflectionClass $reflection, $response){
+                $List = [];
                 if(count($response) > 0){
                     try {
                         $this->isSingle($response);
                         $this->formatSingle($reflection, $response, $this);
                     } catch (\Throwable $th) {
-                        //throw $th;
+                        $List = $this->formatMutiple($reflection, $response, $this);
+                        return $List;
                     }
                 }
             }
@@ -400,18 +432,45 @@
 
             }
 
-            private function subFormat(ReflectionProperty $reflection, $data){
+            private function formatMutiple(ReflectionClass $reflection, $response, $Instance){
+                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
+                $instances = [];
+                for($i = 0; $i < count($response); $i++){
+                    $instance = $reflection->newInstance();
+                    foreach($reflectionVars as $var){
+                        $object = $this->subFormatMult($var, $response[$i]);
+                        $varName = $var->getName();
+                        $var->setAccessible(true);
+                        if(isset($object)){
+                            $var->setValue($instance, $object);
+                        }else{
+                            $var->setValue($instance, $response[$i][$varName]);
+                        }
+                        $var->setAccessible(false);
+                    }
+                    $instances[] = $instance;
+                }
+
+                return $instances;
+
+            }
+
+            private function subFormatMult(ReflectionProperty $reflection, $data){
                 foreach(self::$loadedClass as $class){
                     if(strtolower($class) === strtolower($reflection->getName())){
                         $newClass = new ReflectionClass($class);
+                        $reflectionVars = $newClass->getProperties(ReflectionProperty::IS_PRIVATE);
                         $instance = $newClass->newInstance();
-                        try {
-                            $this->isSingle($data[strtolower($class)]);
-                            $this->formatSingle($newClass, $data[strtolower($class)], $instance);
-                        } catch (\Throwable $th) {
-                            //throw $th;
+                        foreach($reflectionVars as $var){
+                            $object = $this->subFormatMult($var, $data[strtolower($class)][$var->getName()]);
+                            if($object !== null && isset($object)){
+                                $this->formatMutiple($newClass, $data[strtolower($class)], $instance);
+                            }
+                            $var->setAccessible(true);
+                            if(isset($data[strtolower($class)][$var->getName()])){
+                                $var->setValue($instance, $data[strtolower($class)][$var->getName()]);
+                            }
                         }
-
                         return $instance;
                     }
                 }
@@ -419,60 +478,25 @@
                 return null;
             }
 
-            private function formatResponse(ReflectionClass $reflection, $response){
-                $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
-                $methods = $reflection->getMethods();
-                if(count($response) === 1){
-                    foreach($methods as $method){
-                        foreach($reflectionVars as $var){
-                            if(strtolower($method->getName()) === strtolower("set".$var->getName())){
-                                $method->invoke($this, $response[0][$var->getName()]);
+            private function subFormat(ReflectionProperty $reflection, $data){
+                foreach(self::$loadedClass as $class){
+                    if(strtolower($class) === strtolower($reflection->getName())){
+                        $newClass = new ReflectionClass($class);
+                        $instance = $newClass->newInstance();
+                        try {
+                            if(isset($data[strtolower($class)])){
+                                $this->isSingle($data[strtolower($class)]);
+                                $this->formatSingle($newClass, $data[strtolower($class)], $instance);
                             }
+                        } catch (\Throwable $th) {
+                           echo $th->getMessage();
                         }
-                    }
-                    unset($reflection);
-                    unset($reflectionVars);
-                }elseif(count($response) > 1){
-                    $arrayObject = [];
-                    foreach($response as $dbres){
-                        $newInstance = new $this;
-                        $reflectionnovo = new ReflectionClass($newInstance);
-                        $methods = $reflectionnovo->getMethods();
-                        foreach($methods as $method){
-                            foreach($reflectionVars as $var){
-                                if(strtolower($method->getName()) === strtolower("set".$var->getName())){
-                                    $method->invoke($newInstance, $dbres[$var->getName()]);
-                                }
-                            }
-                        }
-                        $arrayObject[] = $newInstance;
-                    }
 
-                    if(count($arrayObject) > 0 && $arrayObject !== null){
-                        $error = true;
-                        foreach($arrayObject as $res){
-                            $verificlass = new ReflectionClass($res);
-                            $reflectionVars = $verificlass->getProperties(ReflectionProperty::IS_PRIVATE);
-                            foreach($reflectionVars as $var){
-                                $var->setAccessible(true);
-                                $propertyValue = $var->getValue($this);
-
-                            }
-                        }
-                        unset($verificlass);
-                    }else{
-                        $error = true;
-                    }
-
-                    unset($reflection);
-                    unset($reflectionVars);
-                    if($error){
-                        return $response;
-                    }else{
-                        return $arrayObject;
+                        return $instance;
                     }
                 }
 
+                return null;
             }
 
             private function genericSelect($table, $reflectionVars, $var, $id, $withJoin = true){
@@ -598,6 +622,17 @@
                 }
 
                 throw new Exception("fomatação multipla");
+            }
+
+            private function autoselectSQL_Type($identity, $sql){
+                $identity = strtolower($identity);
+                if($identity === "insert"){
+                    return $this->ExecuteInsert($sql);
+                }elseif($identity === "delete"){
+                    return $this->ExecuteDelete($sql);
+                }elseif($identity === "select"){
+                    return $this->ExecuteSelect($sql);
+                }
             }
 
         }
