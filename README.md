@@ -121,6 +121,20 @@ Agora que você estendeu a classe `DbManager` e inicializou o carregador de clas
 
 Aqui estão alguns exemplos de como usar este ORM:
 
+### formatação
+```php
+$seuModel = new SuaClasseModel();
+
+//formatado(altera o istacia atual para os cados)
+$seuModel->findById(0);
+$seuModel->getNome();
+
+//caso sem formatar
+$seuModel->setFormat(false);
+$resultados = $seuModel->findById(0);
+$resultados["nome"];
+```
+
 #### Recuperar os registros
 
 ```php
@@ -159,4 +173,14 @@ $seuModel->setNome("nome");
 $seuModel->setIdade(20);
 $seuModel->setOutroModelo($outroModelo);
 $resultados = $seuModel->save($seuModel);
+```
+
+#### alterar registros
+
+```php
+$seuModel = new SuaClasseModel();
+$seuModel->findId(0);
+$seuModel->setNome("teste");
+$seuModel->Update($seuModel);
+
 ```
