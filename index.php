@@ -7,6 +7,4 @@
     DbLoader::autoloader();
     DbLoader::init();
 
-
-
 ?>

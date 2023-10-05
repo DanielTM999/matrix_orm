@@ -9,7 +9,7 @@
     if (!class_exists('matrixOrm\DbManager')){
         class DbManager {
             private static $loadedClass = [];
-            private $format = false;
+            private $format = true;
 
 
             public static function getClassContext(){
@@ -210,6 +210,61 @@
 
             }
 
+            public function Update(DbManager $entity){
+                $table = strtolower(get_called_class());
+                $sql = "UPDATE $table SET ";
+                $reflection = new ReflectionClass($this);
+                $reflectionVars = $reflection->getProperties();
+                $identity = $this->reflectasloopvar($reflectionVars);
+                $identityValue = 0;
+                foreach($reflectionVars as $var){
+                    $varName = $var->getName();
+                    $isNoClass = true;
+                    $className = null;
+                    if($varName === $identity){
+                        $var->setAccessible(true);
+                        $identityValue = $var->getValue($entity);
+                        $var->setAccessible(false);
+                    }
+                    foreach(self::$loadedClass as $class){
+                        if(strtolower($class) === $var->getName()){
+                            $isNoClass = false;
+                            $className = $class;
+                        }
+                    }
+                    if($isNoClass){
+                        $var->setAccessible(true);
+                        $value = $var->getValue($entity);
+                        if($varName !== $identity){
+                            $sql .= " $varName = '$value', ";
+                        }
+                        $var->setAccessible(true);
+                        $value = $var->getValue($entity);
+                    }else{
+                        if(isset($className)){
+                            $var->setAccessible(true);
+
+                            $objectIntance = $var->getValue($entity);
+                            $value = $this->getIdvalueClass($objectIntance);
+
+                            $var->setAccessible(false);
+                        }
+                        if(isset($value)){
+                            $sql .= " $varName = '$value', ";
+                        }else{
+                            $timezone = "America/Sao_Paulo";
+                            date_default_timezone_set($timezone);
+                            $dataHoraAtual = date('[d-m-Y] [H:i:s]');
+                            echo "[ WARING ] ==> [$dataHoraAtual]{'$className'} Não encontrado, Sem altererações nesse compo!";
+                        }
+                    }
+
+                }
+                $sql = rtrim($sql, ', ') . " WHERE $identity = $identityValue";
+
+                return $this->ExecuteUpdate($sql);
+            }
+
             public function save(DbManager $entity){
                 $reflection = new ReflectionClass($entity);
                 $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
@@ -315,6 +370,24 @@
                 if($controll > 0){
                    return $this->ExecuteCreate($sql);
                 }
+            }
+
+            private function getIdvalueClass($object){
+                $reflection = new ReflectionClass($object);
+                $reflectionVars = $reflection->getProperties();
+                $identity = $this->reflectasloopvar($reflectionVars);
+
+                foreach($reflectionVars as $var){
+                    $varName = $var->getName();
+                    if($varName === $identity){
+                        $var->setAccessible(true);
+                        $identityValue = $var->getValue($object);
+                        $var->setAccessible(false);
+                    }
+                }
+                unset($reflection);
+                unset($reflectionVars);
+                return $identityValue;
             }
 
             private function getPropertyType(ReflectionProperty $property){
@@ -427,6 +500,20 @@
                     }
                     $response[] = $pdo->lastInsertId();
                     return $response;
+                } catch (\Throwable $th) {
+                    return $th->getMessage();
+                }
+            }
+
+            private function ExecuteUpdate($sql){
+                $pdo = Connection::Conect();
+                try {
+                    $status = $pdo->exec($sql);
+                    if($status === 1 ){
+                        return true;
+                    }else{
+                        return false;
+                    }
                 } catch (\Throwable $th) {
                     return $th->getMessage();
                 }
