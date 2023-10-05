@@ -11,6 +11,16 @@ Certifique-se de que você tenha as seguintes dependências instaladas e configu
 2. **Banco de Dados**: Este ORM usa .env como ambiente para pegar os dados de coneção por tanto deve-se criar um .env na
 raiz do projeto onde foi definido geralmente /src
 
+
+## Uso Básico
+
+Para começar a usar este ORM, siga estas etapas:
+
+```shell
+    composer require danieltm/matrix_orm
+```
+
+
 ```php
     namespace SeuNamespace;
     include "vendor/autoload.php"
@@ -29,10 +39,6 @@ raiz do projeto onde foi definido geralmente /src
     DIALECT = mysql #opicional caso esteza rodando em outro banco de dados
 
 ```
-
-## Uso Básico
-
-Para começar a usar este ORM, siga estas etapas:
 
 ### 1. Estenda a Classe `DbManager`
 
