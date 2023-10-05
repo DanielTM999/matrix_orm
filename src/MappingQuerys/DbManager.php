@@ -116,7 +116,36 @@
                     $expectedDelete = 'deleteBy'. ucfirst($var->getName());
                     $expectedGet = 'get'. ucfirst($var->getName());
                     $expectedSet = 'set'. ucfirst($var->getName());
-                    if (strpos($method, $exopected) === 0 || strpos($method, $expectedLow) === 0) {
+
+                    foreach(self::$loadedClass as $class){
+                        if(ucfirst($var->getName()) === ucfirst($class)){
+                            if (strpos($method, $exopected) === 0 || strpos($method, $expectedLow) === 0){
+                                if(is_object($args[0])){
+                                    $sql = $this->findByesternalclass($class, $reflection, $args[0]);
+                                    $response = $this->ExecuteSelect($sql[0]["Mainquery"]);
+                                    for ($i=0; $i < count($sql); $i++) {
+                                        if(isset($sql[$i]["query"])){
+                                            $intern = $this->ExecuteSelect($sql[$i]["query"]);
+                                            $expected = strtolower($sql[0]["var"]);
+                                            for ($j=0; $j < count($response); $j++){
+                                                $response[$j][$expected] =  $intern;
+                                            }
+                                        }
+                                    }
+                                    if($this->format){
+                                        return $this->FormatResponseBeta($reflection, $response);
+                                    }else{
+                                        unset($reflectionVars);
+                                        unset($reflection);
+                                        return $response;
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+
+                    if (strpos($method, $exopected) === 0 && strpos($method, $expectedLow) === 0 && false) {
                         $value = $args[0];
                         $field = lcfirst(substr($method, 6));
                         if(isset($args[1])){
@@ -633,6 +662,28 @@
                 }elseif($identity === "select"){
                     return $this->ExecuteSelect($sql);
                 }
+            }
+
+            private function findByesternalclass($className, ReflectionClass $thisReflextion, $object){
+                $table = $thisReflextion->getName();
+                $reflectionVars = $thisReflextion->getProperties();
+                foreach($reflectionVars as $var){
+                    if(strtolower($className) === strtolower($var->getName())){
+                        $reflection = new ReflectionClass($className);
+                        $vars = $reflection->getProperties();
+                        $id = $this->reflectasloopvar($vars);
+                        foreach($vars as $expectedId){
+                            if($expectedId->getName() === $id){
+                                $expectedId->setAccessible(true);
+                                $classWhere =  $expectedId->getValue($object);
+                                $expectedId->setAccessible(false);
+                            }
+                        }
+                    }
+                }
+
+                $sql = $this->genericSelect($table, $reflectionVars, $className, $classWhere);
+                return $sql;
             }
 
         }

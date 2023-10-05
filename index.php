@@ -7,10 +7,6 @@
     DbLoader::autoloader();
     DbLoader::init();
 
-    $casa = new Casa();
-    $casa->setFormat(true);
-    $casa->findByPessoa("teste");
-
 
 
 ?>
