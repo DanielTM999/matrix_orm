@@ -59,12 +59,34 @@
                     $response = $this->ExecuteSelect($sql);
                     $entity = [];
                     for ($i=0; $i < count($responseBase); $i++) {
-                        foreach($response as $data){
-                            if($responseBase[$i][$class] === $data[$class]){
-                                $entity = $data;
+                        if(isset($response)){
+                            foreach($response as $data){
+                                if($responseBase[$i][$class] === $data[$class]){
+                                    $entity = $data;
+                                }
+                            }
+                            $responseBase[$i][$class] = $entity;
+                        }
+                    }
+                }
+                $idThisClass = $this->reflectasloopvar($reflectionVars);
+                foreach($reflectionVars as $var){
+                    foreach(self::$loadedClass as $classtoload){
+                        if(strtolower($var->getName()) === strtolower($classtoload)){
+                            for ($i=0; $i < count($responseBase); $i++){
+                                if($this->oneToMany($var)){
+                                    $reflectionInternal = new ReflectionClass($var->getName());
+                                    $reflectionVarsinternal = $reflectionInternal->getProperties();
+                                    $idValue = $responseBase[$i][$idThisClass];
+                                    $SubSql = "SELECT * FROM $classtoload WHERE $table = $idValue";
+                                    $response = $this->ExecuteSelect($SubSql);
+                                    $responseBase[$i][$var->getName()] = $response;
+                                    unset($reflectionInternal);
+                                    unset($reflectionVarsinternal);
+
+                                }
                             }
                         }
-                        $responseBase[$i][$class] = $entity;
                     }
                 }
 
@@ -327,7 +349,10 @@
                         $sql .= $this->choiceTypeAtrubite($propertyType, $propertyName, $nonconfig, $unique);
                         foreach(self::$loadedClass as $classGetatribute){
                             if($classGetatribute !== "DbManager" && $classGetatribute !== "DbLoader"){
-                                if(strtolower($propertyName) === strtolower($classGetatribute)){
+                                if($this->oneToMany($property)){
+                                    $nonconfig = false;
+                                }
+                                if(strtolower($propertyName) === strtolower($classGetatribute) && !$this->oneToMany($property)){
                                     $reflectionSubclas = new ReflectionClass($classGetatribute);
                                     $primarykey = $reflectionSubclas->getProperties(ReflectionProperty::IS_PRIVATE);
                                     foreach($primarykey as $atribute){
@@ -358,7 +383,9 @@
 
                     }
 
-                    $sql .= ",";
+                    if(!$this->oneToMany($property)){
+                        $sql .= ",";
+                    }
                 }
 
                 $sql = rtrim($sql, ",");
@@ -366,9 +393,8 @@
 
                 unset($reflection);
                 unset($reflectionVars);
-
                 if($controll > 0){
-                   return $this->ExecuteCreate($sql);
+                  return $this->ExecuteCreate($sql);
                 }
             }
 
@@ -414,6 +440,15 @@
                     return "1xn";
                 }else{
                     return "1x1";
+                }
+            }
+
+            private function oneToMany(ReflectionProperty $property){
+                $docComment = $property->getDocComment();
+                if(strpos($docComment, '@OneToMany') !== false){
+                    return true;
+                }else{
+                    return false;
                 }
             }
 
@@ -535,7 +570,7 @@
             private function formatSingle(ReflectionClass $reflection, $response, $Instance){
                 $reflectionVars = $reflection->getProperties(ReflectionProperty::IS_PRIVATE);
                 foreach($reflectionVars as $var){
-                    $object = $this->subFormat($var, $response[0]);
+                    $object = $this->subFormat($var, $response[0], $Instance);
                     $varName = $var->getName();
                     $var->setAccessible(true);
                     if($object !== null){
@@ -594,7 +629,7 @@
                 return null;
             }
 
-            private function subFormat(ReflectionProperty $reflection, $data){
+            private function subFormat(ReflectionProperty $reflection, $data, $instancecs){
                 foreach(self::$loadedClass as $class){
                     if(strtolower($class) === strtolower($reflection->getName())){
                         $newClass = new ReflectionClass($class);
@@ -605,7 +640,11 @@
                                 $this->formatSingle($newClass, $data[strtolower($class)], $instance);
                             }
                         } catch (\Throwable $th) {
-                           echo $th->getMessage();
+                            if($this->oneToMany($reflection)){
+                                $instancesOfClass = $this->addAllMany($data, strtolower($class));
+                                return $instancesOfClass;
+                            }
+
                         }
 
                         return $instance;
@@ -613,6 +652,27 @@
                 }
 
                 return null;
+            }
+
+            private function addAllMany($data, $className){
+                $itens = $data[strtolower($className)];
+                $reflection = new ReflectionClass($className);
+                $vars = $reflection->getProperties();
+                $instances = [];
+
+                foreach($itens as $iten){
+                    $instance = $reflection->newInstance();
+                    foreach($vars as $var){
+                        $var->setAccessible(true);
+                        $var->setValue($instance, $iten[$var->getName()]);
+                        $var->setAccessible(false);
+                    }
+                    $instances[] = $instance;
+                    unset($instance);
+                }
+
+                return $instances;
+
             }
 
             private function genericSelect($table, $reflectionVars, $var, $id, $withJoin = true){
