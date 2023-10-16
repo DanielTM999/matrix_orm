@@ -682,6 +682,7 @@
                 if(count($props) > 0 && $withJoin){
                     foreach($props as $classtojion){
                         $reflectionInternal = new ReflectionClass($classtojion);
+                        $classtojion = strtolower($classtojion);
                         $reflectionVarsinternal = $reflectionInternal->getProperties(ReflectionProperty::IS_PRIVATE);
                         $varId = $this->reflectasloopvar($reflectionVarsinternal);
                         $sql .= " JOIN $classtojion ON $table.$classtojion = $classtojion.$varId ";
