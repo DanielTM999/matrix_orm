@@ -672,7 +672,6 @@
                 }
 
                 return $instances;
-
             }
 
             private function genericSelect($table, $reflectionVars, $var, $id, $withJoin = true){
